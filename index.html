@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>班级积分乐园 🍬</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* 登录界面样式 */
+        .login-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #FFF0F5;
+            padding: 30px 50px;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(255,182,193,0.3);
+            text-align: center;
+            z-index: 9999;
+            max-width: 400px;
+            width: 90%;
+        }
+        .login-input {
+            margin: 10px;
+            padding: 8px 12px;
+            border: 2px solid #FFB6C1;
+            border-radius: 8px;
+            width: 180px;
+            font-family: 'Comic Sans MS', cursive;
+        }
+        .login-btn {
+            background: #FF69B4;
+            color: white;
+            padding: 8px 20px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .login-btn:hover {
+            background: #FF1493;
+        }
+
+        /* 响应式布局 */
+        @media (max-width: 768px) {
+            .student-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            .container {
+                flex-direction: column;
+            }
+            .login-container {
+                padding: 20px;
+            }
+            .modal {
+                width: 90% !important;
+                padding: 15px;
+            }
+            .student-card button {
+                padding: 4px 8px;
+                font-size: 12px;
+            }
+        }
+
+        /* 原有样式 */
+        body {
+            font-family: 'Comic Sans MS', cursive;
+            background: #FFF5F5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+            display: none;
+        }
+        .main-content {
+            flex: 3;
+        }
+        .sidebar {
+            flex: 1;
+            min-width: 280px;
+        }
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .student-card, .reward-card {
+            background: #FFF0F8;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(255,182,193,0.2);
+            border: 2px solid #FFB6C1;
+            position: relative;
+        }
+        .controls {
+            background: #F0FFFF;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #FFB6C1;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            margin: 3px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 14px;
+        }
+        .management-btn {
+            background: #90EE90;
+        }
+        .reward-btn {
+            background: #FFD700;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            cursor: move;
+        }
+        .modal-header {
+            padding: 10px;
+            cursor: move;
+            background: #FFF0F5;
+            border-radius: 10px;
+            margin: -10px -10px 10px -10px;
+        }
+        input, select {
+            padding: 8px;
+            border-radius: 8px;
+            border: 2px solid #FFB6C1;
+            margin: 5px;
+        }
+        .score {
+            font-size: 16px;
+            margin: 8px 0;
+            color: #FF69B4;
+        }
+        h2 {
+            color: #FF69B4;
+            text-align: center;
+            margin: 0 0 20px 0;
+        }
+        .edit-btn {
+            position: absolute;
+            top: 5px;
+            right: 35px;
+            padding: 2px 6px;
+        }
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            padding: 2px 6px;
+            background: #FF6666;
+        }
+        .ranking-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: #FFF8F0;
+            border-radius: 8px;
+        }
+        .close-btn {
+            background: #FF6666;
+            margin-top: 10px;
+        }
+        .reward-item {
+            padding: 10px;
+            margin: 8px 0;
+            background: #FFF8E7;
+            border-radius: 8px;
+        }
+
+        /* 新增侧边栏排行榜样式 */
+        .sidebar-ranking {
+            margin-top: 20px;
+            background: #F0FFFF;
+            padding: 15px;
+            border-radius: 15px;
+        }
+        .ranking-badge {
+            padding: 8px;
+            margin: 6px 0;
+            background: #FFF8F0;
+            border-radius: 8px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .rank-icon {
+            width: 25px;
+            display: inline-block;
+            text-align: center;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- 登录界面 -->
+    <div class="login-container" id="loginBox">
+        <h2 style="color:#FF69B4;margin:0 0 20px 0;">🔒 班级积分系统登录</h2>
+        <input type="number" id="username" class="login-input" placeholder="账号"><br>
+        <input type="password" id="password" class="login-input" placeholder="密码"><br>
+        <button class="login-btn" onclick="login()">登录</button>
+        <p id="loginMsg" style="color:#FF6666;height:20px;margin:5px;"></p>
+    </div>
+
+    <!-- 主功能界面 -->
+    <div class="container" id="mainInterface">
+        <div class="main-content">
+            <h2>🎀 班级积分管理系统 🎀</h2>
+
+            <!-- 控制面板 -->
+            <div class="controls">
+                <button class="management-btn" onclick="showStudentModal()">👩🎓 学生管理</button>
+                <button class="reward-btn" onclick="showRewardModal()">🎁 奖品管理</button>
+                <button onclick="showRanking()">🏆 积分榜</button>
+                <button onclick="exportStudents()">📤 导出学生</button>
+                <button onclick="importStudents()">📥 导入学生</button>
+                <button onclick="batchOperation('add')">🎉 全体加分</button>
+                <button onclick="batchOperation('minus')">😢 全体减分</button>
+                数值：<input type="number" id="batchValue" value="1" style="width:60px">
+            </div>
+
+            <!-- 学生列表 -->
+            <div class="student-grid" id="studentGrid"></div>
+
+            <!-- 弹窗 -->
+            <div id="studentModal" class="modal">
+                <div class="modal-header">👩🎓 学生管理</div>
+                <input type="number" id="editId" placeholder="学号" min="1" max="55">
+                <input type="text" id="editName" placeholder="姓名">
+                <button onclick="saveStudent()">💾 保存</button>
+                <button class="close-btn" onclick="closeModals()">❌ 关闭</button>
+            </div>
+
+            <div id="rewardModal" class="modal">
+                <div class="modal-header">🎁 奖品管理</div>
+                <input type="text" id="rewardName" placeholder="奖品名称">
+                <input type="number" id="rewardCost" placeholder="所需兑换币" min="1">
+                <input type="number" id="rewardStock" placeholder="库存" min="1">
+                <button onclick="saveReward()">➕ 添加奖品</button>
+                <div id="rewardList" style="margin-top:10px"></div>
+                <button class="close-btn" onclick="closeModals()">❌ 关闭</button>
+            </div>
+
+            <div id="rankingModal" class="modal">
+                <div class="modal-header">🏆 积分排行榜</div>
+                <div style="padding:10px">
+                    <button onclick="showRanking('score')">⭐ 积分排行</button>
+                    <button onclick="showRanking('coins')">🪙 兑换币排行</button>
+                </div>
+                <div id="rankingList" style="max-height:60vh;overflow-y:auto;"></div>
+                <button class="close-btn" onclick="closeModals()">❌ 关闭</button>
+            </div>
+
+            <div id="redeemModal" class="modal">
+                <div class="modal-header">🪙 兑换奖品</div>
+                <input type="number" id="redeemStudentId" placeholder="输入学号">
+                <button onclick="confirmRedeem()">✅ 确定兑换</button>
+                <button class="close-btn" onclick="closeModals()">❌ 关闭</button>
+            </div>
+        </div>
+
+        <!-- 兑换侧栏 -->
+        <div class="sidebar">
+            <h3>🛍️ 可兑换奖品</h3>
+            <div id="redeemSidebar"></div>
+            
+            <!-- 新增实时排行榜 -->
+            <div class="sidebar-ranking">
+                <h3>🏆 实时前十</h3>
+                <div id="sidebarRanking"></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// 登录验证
+function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const loginMsg = document.getElementById('loginMsg');
+
+    if(username === '505' && password === '1111') {
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('mainInterface').style.display = 'flex';
+        initializeSystem();
+    } else {
+        loginMsg.textContent = '账号或密码错误！';
+    }
+}
+
+// 数据初始化
+let students = JSON.parse(localStorage.getItem('students')) || Array(55).fill().map((_,i) => ({
+    id: i+1,
+    name: `学生 ${i+1}`,
+    score: 0,
+    coins: 0
+}));
+
+let rewards = JSON.parse(localStorage.getItem('rewards')) || [];
+let selectedRewardId = null;
+
+// 系统初始化
+function initializeSystem() {
+    renderStudents();
+    renderSidebar();
+    renderSidebarRanking();
+}
+
+// 新增侧边栏排行榜
+function renderSidebarRanking() {
+    const sorted = [...students].sort((a,b) => b.score - a.score).slice(0,10);
+    document.getElementById('sidebarRanking').innerHTML = sorted.map((s, index) => `
+        <div class="ranking-badge">
+            <span class="rank-icon" style="color:${getRankColor(index+1)}">${getRankIcon(index+1)}</span>
+            <span>${s.id}号 ${s.name.substring(0,3)}</span>
+            <span>⭐${s.score}</span>
+        </div>
+    `).join('');
+}
+
+// 原有功能函数
+function renderSidebar() {
+    const sidebar = document.getElementById('redeemSidebar');
+    sidebar.innerHTML = rewards.map(reward => `
+        <div class="reward-item">
+            <b>${reward.name}</b><br>
+            需要: 🪙${reward.cost}<br>
+            库存: ${reward.stock}
+            <button onclick="startRedeem(${reward.id})" ${reward.stock < 1 ? 'disabled' : ''}>
+                🎁 兑换
+            </button>
+        </div>
+    `).join('');
+}
+
+function startRedeem(rewardId) {
+    selectedRewardId = rewardId;
+    document.getElementById('redeemModal').style.display = 'block';
+}
+
+function confirmRedeem() {
+    const studentId = parseInt(document.getElementById('redeemStudentId').value);
+    const student = students.find(s => s.id === studentId);
+    const reward = rewards.find(r => r.id === selectedRewardId);
+
+    if (!student) {
+        alert("找不到该学号的学生！");
+        return;
+    }
+
+    if (student.coins >= reward.cost && reward.stock > 0) {
+        student.coins -= reward.cost;
+        reward.stock--;
+        saveData();
+        renderStudents();
+        renderSidebar();
+        renderSidebarRanking();
+        alert("兑换成功！");
+        closeModals();
+    } else {
+        alert("兑换失败：兑换币不足或库存不足");
+    }
+}
+
+function showRanking(type = 'score') {
+    const modal = document.getElementById('rankingModal');
+    modal.style.display = 'block';
+    
+    const sorted = [...students].sort((a,b) => b[type] - a[type]);
+    document.getElementById('rankingList').innerHTML = sorted.map((s, index) => `
+        <div class="ranking-item">
+            <span style="color:${getRankColor(index+1)}">${getRankIcon(index+1)}</span>
+            ${s.id}号 ${s.name} 
+            <span style="float:right;">${type === 'score' ? '⭐' : '🪙'}${s[type]}</span>
+        </div>
+    `).join('');
+}
+
+function getRankIcon(rank) {
+    if(rank === 1) return '🥇';
+    if(rank === 2) return '🥈';
+    if(rank === 3) return '🥉';
+    return rank;
+}
+
+function getRankColor(rank) {
+    return ['#FFD700','#C0C0C0','#CD7F32'][rank-1] || '#666';
+}
+
+document.querySelectorAll('.modal').forEach(modal => {
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+    
+    modal.querySelector('.modal-header').addEventListener('mousedown', e => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        startLeft = modal.offsetLeft;
+        startTop = modal.offsetTop;
+    });
+    
+    document.addEventListener('mousemove', e => {
+        if(!isDragging) return;
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        modal.style.left = `${startLeft + deltaX}px`;
+        modal.style.top = `${startTop + deltaY}px`;
+        modal.style.transform = 'none';
+    });
+    
+    document.addEventListener('mouseup', () => isDragging = false);
+});
+
+function exportStudents() {
+    const header = ["学号", "姓名", "积分", "兑换币"];
+    const data = students.map(student => [student.id, student.name, student.score, student.coins]);
+    const wsData = [header, ...data];
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Students");
+    XLSX.writeFile(wb, `学生数据_${new Date().toLocaleDateString()}.xlsx`);
+}
+
+function importStudents() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx, .xls';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const json = XLSX.utils.sheet_to_json(worksheet);
+
+            students = json.map(row => ({
+                id: row['学号'],
+                name: row['姓名'],
+                score: row['积分'],
+                coins: row['兑换币']
+            }));
+
+            saveData();
+            renderStudents();
+            renderSidebarRanking();
+            alert("学生数据导入成功！");
+        };
+        reader.readAsArrayBuffer(file);
+    };
+    input.click();
+}
+
+function updateStudent(id, delta) {
+    const student = students.find(s => s.id === id);
+    student.score += delta;
+    student.coins += delta;
+    saveData();
+    renderStudents();
+    renderSidebarRanking();
+}
+
+function batchOperation(type) {
+    const value = parseInt(document.getElementById('batchValue').value);
+    students.forEach(s => {
+        s.score += type === 'add' ? value : -value;
+        s.coins += type === 'add' ? value : -value;
+    });
+    saveData();
+    renderStudents();
+    renderSidebarRanking();
+}
+
+function showStudentModal() {
+    document.getElementById('studentModal').style.display = 'block';
+}
+
+function saveStudent() {
+    const id = parseInt(document.getElementById('editId').value);
+    const name = document.getElementById('editName').value;
+    
+    const student = students.find(s => s.id === id);
+    if(student) {
+        student.name = name;
+    } else {
+        students.push({ id, name, score:0, coins:0 });
+    }
+    saveData();
+    renderStudents();
+    renderSidebarRanking();
+    closeModals();
+}
+
+function showRewardModal() {
+    document.getElementById('rewardModal').style.display = 'block';
+    renderRewards();
+}
+
+function saveReward() {
+    rewards.push({
+        id: Date.now(),
+        name: document.getElementById('rewardName').value,
+        cost: parseInt(document.getElementById('rewardCost').value),
+        stock: parseInt(document.getElementById('rewardStock').value)
+    });
+    saveData();
+    renderRewards();
+    renderSidebar();
+}
+
+function deleteReward(id) {
+    rewards = rewards.filter(r => r.id !== id);
+    saveData();
+    renderRewards();
+    renderSidebar();
+}
+
+function renderStudents() {
+    const grid = document.getElementById('studentGrid');
+    grid.innerHTML = students.sort((a,b) => a.id - b.id).map(student => `
+        <div class="student-card">
+            <button class="delete-btn" onclick="deleteStudent(${student.id})">×</button>
+            <button class="edit-btn" onclick="editStudent(${student.id})">✏️</button>
+            <div>🎒 ${student.id}号：${student.name}</div>
+            <div class="score">⭐ 积分：${student.score}</div>
+            <div class="score">🪙 兑换币：${student.coins}</div>
+            <button onclick="updateStudent(${student.id}, 1)">➕</button>
+            <button onclick="updateStudent(${student.id}, -1)">➖</button>
+        </div>
+    `).join('');
+}
+
+function renderRewards() {
+    const list = document.getElementById('rewardList');
+    list.innerHTML = rewards.map(reward => `
+        <div style="margin:5px; padding:5px; background:#FFF8E7; border-radius:8px">
+            ${reward.name} 
+            (需🪙${reward.cost}, 库存:${reward.stock})
+            <button onclick="deleteReward(${reward.id})">🗑️</button>
+        </div>
+    `).join('');
+}
+
+function deleteStudent(id) {
+    if (confirm("确定要删除这个学生吗？操作不可恢复！")) {
+        students = students.filter(s => s.id !== id);
+        saveData();
+        renderStudents();
+        renderSidebarRanking();
+    }
+}
+
+function editStudent(id) {
+    const student = students.find(s => s.id === id);
+    document.getElementById('editId').value = id;
+    document.getElementById('editName').value = student.name;
+    showStudentModal();
+}
+
+function closeModals() {
+    document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+    selectedRewardId = null;
+    document.getElementById('redeemStudentId').value = '';
+}
+
+function saveData() {
+    localStorage.setItem('students', JSON.stringify(students));
+    localStorage.setItem('rewards', JSON.stringify(rewards));
+}
+
+// 初始化登录界面
+document.getElementById('mainInterface').style.display = 'none';
+</script>
+</body>
+</html>
